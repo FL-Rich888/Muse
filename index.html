@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>灵感匣</title>
+<style>
+/* ============================================================
+灵感匣 · 手帐日记本风格
+设计令牌：米白浅暖、淡青淡粉、1px描边+单层轻阴影
+============================================================ */
+:root {
+--bg:           #6B5A72;   /* 米白主背景 */
+--bg-soft:      #4A3D52;   /* 浅暖米色，用于消息气泡/悬浮 */
+--bg-card:      #1F1402;   /* 卡片底色，略白于主背景 */
+--text:         #E8DCC0;   /* 主文字，暖深灰 */
+--text-muted:   #C9B89A;   /* 次要文字 */
+--text-faint:   #A89878;   /* 更淡文字（时间/提示） */
+--accent-pink:  #D4B275;   /* 淡粉：标记点/保存按钮 */
+--accent-cyan:  #D4B275;   /* 淡青：选中态/焦点边框 */
+--accent-lav:   #98819E;   /* 淡紫：梦类标签 */
+--border:       #123361;   /* 浅边框 */
+--border-soft:  #1E3D5E;   /* 更浅边框（分隔线） */
+--shadow:       0 2px 12px rgba(92, 84, 74, 0.06);   /* 单层轻阴影 */
+--shadow-hover: 0 4px 16px rgba(92, 84, 74, 0.10);
+--radius:       10px;      /* 卡片圆角 */
+--radius-sm:    6px;       /* 小圆角 */
+}
+/* 全局重置 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+background: var(--bg);
+color: var(--text);
+font-size: 14px;
+line-height: 1.6;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+}
+/* ===================== 顶部栏 ===================== */
+.top-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 16px 32px;
+background: var(--bg);
+border-bottom: 1px solid var(--border-soft);
+position: sticky;
+top: 0;
+z-index: 10;
+}
+.logo {
+font-size: 20px;
+font-weight: 600;
+letter-spacing: 1px;
+color: var(--text);
+}
+.logo::before {
+content: "✦";
+margin-right: 6px;
+color: var(--accent-pink);
+font-size: 15px;
+}
+.tag-btn {
+padding: 6px 16px;
+background: var(--bg-card);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+color: var(--text);
+cursor: pointer;
+font-size: 13px;
+transition: all 0.2s;
+}
+.tag-btn:hover {
+background: var(--bg-soft);
+border-color: var(--accent-cyan);
+}
+/* ===================== 主体容器 ===================== */
+.container {
+display: flex;
+flex: 1;
+overflow: hidden;
+padding-bottom: 110px;   /* 给底部固定输入框留白 */
+}
+/* ===================== 左侧时间线 ===================== */
+.sidebar {
+width: 280px;
+min-width: 280px;
+border-right: 1px solid var(--border-soft);
+overflow-y: auto;
+padding: 20px 16px;
+background: var(--bg);
+}
+.sidebar-title {
+font-size: 15px;
+font-weight: 600;
+margin-bottom: 16px;
+padding-left: 4px;
+}
+.timeline-item {
+padding: 12px;
+margin-bottom: 4px;
+border-radius: var(--radius-sm);
+cursor: pointer;
+transition: all 0.2s;
+border: 1px solid transparent;
+}
+.timeline-item:hover {
+background: var(--bg-soft);
+border-color: var(--border-soft);
+}
+.timeline-item.active {
+background: var(--bg-soft);
+border-color: var(--accent-pink);
+}
+.timeline-time {
+font-size: 12px;
+color: var(--text-muted);
+margin-bottom: 6px;
+font-variant-numeric: tabular-nums;   /* 等宽数字，时间对齐 */
+}
+.timeline-tags {
+display: flex;
+flex-wrap: wrap;
+gap: 4px;
+}
+.tag {
+font-size: 12px;
+padding: 2px 8px;
+border-radius: 10px;
+background: var(--bg-soft);
+color: var(--text-muted);
+}
+.tag-pink     { background: #F5E3E0; color: #B88A84; }   /* 回忆/灵感 */
+.tag-cyan     { background: #E0EDEB; color: #7A9E99; }   /* 写作 */
+.tag-lavender { background: #E8E0EB; color: #9378A0; }   /* 梦 */
+.tag-gray     { background: var(--bg-soft); color: var(--text-muted); }
+.timeline-divider {
+height: 1px;
+background: var(--border-soft);
+margin: 8px 0;
+}
+/* ===================== 右侧主区 ===================== */
+.main-content {
+flex: 1;
+overflow-y: auto;
+padding: 32px 40px;
+}
+/* ---------- 日历 ---------- */
+.calendar {
+max-width: 640px;
+margin: 0 auto;
+}
+.calendar-header {
+display: flex;
+align-items: center;
+justify-content: center;
+margin-bottom: 24px;
+gap: 16px;
+}
+.calendar-title {
+font-size: 18px;
+font-weight: 600;
+min-width: 140px;
+text-align: center;
+}
+.calendar-nav {
+background: none;
+border: 1px solid var(--border);
+width: 28px;
+height: 28px;
+border-radius: 50%;
+cursor: pointer;
+color: var(--text-muted);
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+font-size: 16px;
+line-height: 1;
+}
+.calendar-nav:hover {
+background: var(--bg-soft);
+border-color: var(--accent-cyan);
+}
+.calendar-grid {
+display: grid;
+grid-template-columns: repeat(7, 1fr);
+gap: 4px;
+}
+.calendar-weekday {
+text-align: center;
+font-size: 13px;
+color: var(--text-muted);
+padding: 8px 0;
+}
+.calendar-day {
+aspect-ratio: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-size: 14px;
+position: relative;
+transition: all 0.2s;
+border: 1px solid transparent;
+}
+.calendar-day:hover:not(.empty) {
+background: var(--bg-soft);
+}
+.calendar-day.empty { cursor: default; }
+/* 有记录的日期下方小圆点 */
+.calendar-day.has-dot::after {
+content: "";
+position: absolute;
+bottom: 6px;
+width: 5px;
+height: 5px;
+border-radius: 50%;
+background: var(--accent-pink);
+}
+.calendar-day.today {
+border-color: var(--accent-cyan);
+font-weight: 600;
+}
+.calendar-day.selected {
+background: var(--accent-cyan);
+color: #fff;
+}
+.calendar-day.selected::after { background: #fff; }
+.calendar-legend {
+margin-top: 20px;
+text-align: center;
+font-size: 12px;
+color: var(--text-faint);
+}
+.calendar-legend .dot {
+display: inline-block;
+width: 6px;
+height: 6px;
+border-radius: 50%;
+background: var(--accent-pink);
+margin: 0 6px;
+vertical-align: middle;
+}
+/* ---------- 灵感卡片 ---------- */
+.inspiration-card {
+background: var(--bg-card);
+border: 1px solid var(--border);
+border-radius: var(--radius);
+padding: 20px 24px;
+margin-bottom: 20px;
+box-shadow: var(--shadow);
+}
+.card-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 16px;
+padding-bottom: 12px;
+border-bottom: 1px solid var(--border-soft);
+}
+.card-tags { display: flex; gap: 6px; }
+.card-meta {
+font-size: 12px;
+color: var(--text-faint);
+}
+.card-messages {
+display: flex;
+flex-direction: column;
+gap: 16px;
+}
+.message {
+background: var(--bg-soft);
+border-radius: var(--radius-sm);
+padding: 12px 16px;
+max-width: 90%;
+}
+.message-time {
+font-size: 11px;
+color: var(--text-faint);
+margin-bottom: 6px;
+font-variant-numeric: tabular-nums;
+}
+.message-content {
+font-size: 14px;
+line-height: 1.7;
+color: var(--text);
+}
+/* 第二阶段新增：消息正文中的图片渲染样式 */
+.message-content img {
+max-width: 100%;
+border-radius: var(--radius-sm);
+margin-top: 8px;
+display: block;
+}
+.card-footer {
+margin-top: 16px;
+text-align: right;
+}
+.continue-btn {
+padding: 6px 16px;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+color: var(--text);
+cursor: pointer;
+font-size: 13px;
+transition: all 0.2s;
+}
+.continue-btn:hover {
+background: var(--accent-pink);
+border-color: var(--accent-pink);
+color: #fff;
+}
+.empty-state {
+text-align: center;
+color: var(--text-faint);
+padding: 60px 20px;
+font-size: 14px;
+}
+/* ===================== 底部固定输入区 ===================== */
+.input-area {
+position: fixed;
+bottom: 0; left: 0; right: 0;
+background: var(--bg);
+border-top: 1px solid var(--border-soft);
+padding: 14px 32px;
+z-index: 10;
+}
+.input-wrapper {
+display: flex;
+align-items: flex-end;
+gap: 12px;
+max-width: 1200px;
+margin: 0 auto;
+}
+.input-text {
+flex: 1;
+background: var(--bg-card);
+border: 1px solid var(--border);
+border-radius: var(--radius);
+padding: 12px 16px;
+font-size: 14px;
+font-family: inherit;
+resize: none;
+min-height: 46px;
+max-height: 120px;
+outline: none;
+transition: border-color 0.2s;
+color: var(--text);
+line-height: 1.5;
+}
+.input-text:focus { border-color: var(--accent-cyan); }
+.input-actions {
+display: flex;
+align-items: center;
+gap: 12px;
+}
+.icon-btn {
+background: none;
+border: 1px solid var(--border);
+width: 40px;
+height: 40px;
+border-radius: var(--radius-sm);
+cursor: pointer;
+color: var(--text-muted);
+font-size: 16px;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+}
+.icon-btn:hover {
+background: var(--bg-soft);
+border-color: var(--accent-cyan);
+}
+.tag-suggestions {
+font-size: 12px;
+color: var(--text-faint);
+}
+.tag-suggestions span {
+color: var(--accent-cyan);
+cursor: pointer;
+margin-right: 6px;
+}
+.tag-suggestions span:hover { text-decoration: underline; }
+.save-btn {
+padding: 10px 22px;
+background: var(--accent-pink);
+border: none;
+border-radius: var(--radius-sm);
+color: #fff;
+font-size: 13px;
+cursor: pointer;
+transition: all 0.2s;
+}
+.save-btn:hover { background: #D4A8A2; }
+/* ===================== 标签云弹窗 ===================== */
+.modal-overlay {
+position: fixed;
+inset: 0;
+background: rgba(92, 84, 74, 0.18);
+display: none;
+align-items: center;
+justify-content: center;
+z-index: 100;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+background: var(--bg-card);
+border-radius: var(--radius);
+padding: 24px 28px;
+min-width: 360px;
+box-shadow: var(--shadow-hover);
+}
+.modal-title {
+font-size: 16px;
+font-weight: 600;
+margin-bottom: 16px;
+}
+.tag-cloud {
+display: flex;
+flex-wrap: wrap;
+gap: 10px;
+margin-bottom: 20px;
+}
+.cloud-tag {
+padding: 6px 14px;
+border-radius: 14px;
+background: var(--bg-soft);
+border: 1px solid var(--border);
+cursor: pointer;
+font-size: 13px;
+transition: all 0.2s;
+color: var(--text-muted);
+}
+.cloud-tag:hover { border-color: var(--accent-cyan); }
+.cloud-tag.active {
+background: var(--accent-cyan);
+border-color: var(--accent-cyan);
+color: #fff;
+}
+.modal-footer { text-align: right; }
+.modal-close {
+padding: 6px 16px;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-size: 13px;
+}
+ 
+/* ===================== 第二阶段新增：登录遮罩 ===================== */
+.login-box {
+background: var(--bg-card);
+border: 1px solid var(--border);
+border-radius: var(--radius);
+padding: 32px;
+min-width: 320px;
+box-shadow: var(--shadow-hover);
+text-align: center;
+}
+.login-title {
+font-size: 18px;
+font-weight: 600;
+margin-bottom: 6px;
+}
+.login-sub {
+font-size: 12px;
+color: var(--text-faint);
+margin-bottom: 20px;
+}
+.login-input {
+width: 100%;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 10px 12px;
+color: var(--text);
+font-size: 14px;
+font-family: inherit;
+outline: none;
+margin-bottom: 12px;
+transition: border-color 0.2s;
+}
+.login-input:focus { border-color: var(--accent-cyan); }
+.login-btn {
+width: 100%;
+padding: 10px;
+background: var(--accent-pink);
+border: none;
+border-radius: var(--radius-sm);
+color: #fff;
+font-size: 14px;
+cursor: pointer;
+transition: all 0.2s;
+}
+.login-btn:hover { background: #D4A8A2; }
+.login-error {
+display: none;
+margin-top: 10px;
+font-size: 12px;
+color: #D4A8A2;
+}
+.login-error.show { display: block; }
+ 
+/* ===================== 第二阶段新增：设置弹窗 ===================== */
+.settings-modal { min-width: 380px; }
+.settings-row { margin-bottom: 14px; }
+.settings-label {
+display: block;
+font-size: 12px;
+color: var(--text-muted);
+margin-bottom: 6px;
+}
+.settings-input {
+width: 100%;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: var(--radius-sm);
+padding: 8px 10px;
+color: var(--text);
+font-size: 13px;
+font-family: inherit;
+outline: none;
+}
+.settings-input:focus { border-color: var(--accent-cyan); }
+.settings-hint {
+font-size: 11px;
+color: var(--text-faint);
+margin-top: 4px;
+}
+.settings-actions {
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+margin-top: 20px;
+}
+.settings-actions button {
+padding: 8px 18px;
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-size: 13px;
+border: 1px solid var(--border);
+background: var(--bg);
+color: var(--text);
+transition: all 0.2s;
+}
+.settings-actions .primary {
+background: var(--accent-pink);
+border-color: var(--accent-pink);
+color: #fff;
+}
+ 
+/* ===================== 第二阶段新增：图片预览条 ===================== */
+.image-preview {
+display: none;
+max-width: 1200px;
+margin: 0 auto 10px;
+flex-wrap: wrap;
+gap: 10px;
+}
+.image-preview.show { display: flex; }
+.preview-item {
+position: relative;
+width: 70px;
+height: 70px;
+border-radius: var(--radius-sm);
+overflow: hidden;
+border: 1px solid var(--border);
+}
+.preview-item img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+display: block;
+}
+.preview-remove {
+position: absolute;
+top: 2px;
+right: 2px;
+width: 18px;
+height: 18px;
+border-radius: 50%;
+background: rgba(0,0,0,0.6);
+color: #fff;
+border: none;
+cursor: pointer;
+font-size: 12px;
+line-height: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.preview-remove:hover { background: #D4A8A2; }
+ 
+/* ===================== 第二阶段新增：toast 提示 ===================== */
+.toast {
+position: fixed;
+bottom: 90px;
+left: 50%;
+transform: translateX(-50%);
+background: var(--bg-card);
+border: 1px solid var(--border);
+color: var(--text);
+padding: 8px 18px;
+border-radius: var(--radius-sm);
+font-size: 13px;
+box-shadow: var(--shadow-hover);
+z-index: 200;
+opacity: 0;
+transition: opacity 0.2s;
+pointer-events: none;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<!-- ============ 第二阶段新增：登录遮罩 ============ -->
+<div class="modal-overlay show" id="loginOverlay">
+<div class="login-box">
+<div class="login-title">✦ 灵感匣</div>
+<div class="login-sub">输入密码进入</div>
+<input type="password" class="login-input" id="pwdInput" placeholder="密码" autocomplete="current-password">
+<button class="login-btn" id="pwdSubmit">进入灵感匣</button>
+<div class="login-error" id="pwdError">密码错误，请重试</div>
+</div>
+</div>
+<!-- ============ 顶部栏 ============ -->
+<header class="top-bar">
+<div class="logo">灵感匣</div>
+<div style="display:flex;gap:10px">
+<!-- 原有标签按钮保留 -->
+<button class="tag-btn" id="tagBtn">标签</button>
+<!-- 第二阶段新增：设置按钮 -->
+<button class="tag-btn" id="settingsBtn">设置</button>
+</div>
+</header>
+<div class="container">
+<!-- ============ 左侧：时间线 ============ -->
+<aside class="sidebar">
+<div class="sidebar-title">时间线</div>
+<div id="timeline"></div>
+</aside>
+<!-- ============ 右侧主区（日历 / 卡片 动态切换） ============ -->
+<main class="main-content" id="mainContent"></main>
+</div>
+<!-- ============ 底部固定输入区 ============ -->
+<footer class="input-area">
+<!-- 第二阶段新增：图片预览条（默认隐藏） -->
+<div class="image-preview" id="imagePreview"></div>
+<div class="input-wrapper">
+<!-- 原"添加图片"按钮新增 id="uploadBtn" -->
+<button class="icon-btn" id="uploadBtn" title="添加图片">🖼</button>
+<textarea class="input-text" id="inputText" placeholder="写下此刻的灵感…" rows="1"></textarea>
+<div class="input-actions">
+<div class="tag-suggestions">建议标签:
+<span>#回忆</span><span>#写作</span><span>#梦</span>
+</div>
+<button class="save-btn" id="saveBtn">保存</button>
+</div>
+</div>
+<!-- 第二阶段新增：隐藏文件选择器 -->
+<input type="file" id="imageFile" accept="image/*" hidden>
+</footer>
+<!-- ============ 标签云弹窗 ============ -->
+<div class="modal-overlay" id="tagModal">
+<div class="modal">
+<div class="modal-title">标签云 · 点击筛选</div>
+<div class="tag-cloud" id="tagCloud"></div>
+<div class="modal-footer">
+<button class="modal-close" id="modalClose">关闭</button>
+</div>
+</div>
+</div>
+<!-- ============ 第二阶段新增：设置弹窗 ============ -->
+<div class="modal-overlay" id="settingsModal">
+<div class="modal settings-modal">
+<div class="modal-title">GitHub 配置</div>
+<div class="settings-row">
+<label class="settings-label">仓库 Owner</label>
+<input type="text" class="settings-input" id="ownerInput" placeholder="如 octocat">
+</div>
+<div class="settings-row">
+<label class="settings-label">仓库名 Repo</label>
+<input type="text" class="settings-input" id="repoInput" placeholder="如 inspirations">
+</div>
+<div class="settings-row">
+<label class="settings-label">Fine-grained Token</label>
+<input type="password" class="settings-input" id="tokenInput" placeholder="github_pat_...">
+<div class="settings-hint">保存在 localStorage，仅用于本机请求 GitHub REST API。</div>
+</div>
+<div class="settings-actions">
+<button id="settingsCancel">取消</button>
+<button class="primary" id="settingsSave">保存配置</button>
+</div>
+</div>
+</div>
+<!-- ============ 第二阶段新增：toast 提示 ============ -->
+<div class="toast" id="toast"></div>
+<script>
+/* ============================================================
+灵感匣 · 第二阶段功能脚本
+- 纯前端密码登录（SHA256 + sessionStorage）
+- GitHub REST API 读写私有仓库（entries/*.md、images/）
+- 图片 Canvas 压缩长边到 1600px
+- Markdown YAML frontmatter 解析与序列化
+原有 UI 渲染逻辑全部保留，仅在 init / saveInspiration 处增强
+============================================================ */
+// ---------- 工具函数：日期格式化（原有保留） ----------
+const pad = n => String(n).padStart(2, '0');
+function fmtDate(d) {          // 2026-06-12
+return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function fmtShort(d) {         // 06-12
+return `${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function fmtTime(d) {          // 14:35
+return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+const today = new Date();
+// 生成相对今天偏移 N 天的日期对象
+const dayOffset = n => {
+const d = new Date(today);
+d.setDate(d.getDate() - n);
+return d;
+};
+// ============================================================
+// 【第二阶段新增模块 1】密码登录：Web Crypto API SHA256
+// ============================================================
+// 占位密码哈希 —— 请在此处替换为你自己生成的 SHA256 hex 字符串
+// 注意：不要把明文密码写进代码或对话
+const PWD_HASH = '00cf6d11a313c78b9223e97377974f64381bf58a84e9eaaa633080edf7e59b78';
+// 使用 Web Crypto API 计算 SHA256（禁止手写算法），返回 hex
+async function sha256(text) {
+const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// 提交登录：哈希校验通过后写入 sessionStorage
+async function onLoginSubmit() {
+const pwd = document.getElementById('pwdInput').value;
+const errEl = document.getElementById('pwdError');
+const hash = await sha256(pwd);
+if (hash === PWD_HASH) {
+sessionStorage.setItem('pwd_ok', '1');
+document.getElementById('loginOverlay').classList.remove('show');
+errEl.classList.remove('show');
+init();   // 登录成功后进入主界面初始化
+} else {
+errEl.classList.add('show');
+document.getElementById('pwdInput').select();
+}
+}
+// ============================================================
+// 【第二阶段新增模块 2】GitHub REST API
+// - 配置存 localStorage：gh_owner / gh_repo / gh_token
+// - 仓库结构：entries/*.md（frontmatter）、images/（图片）
+// ============================================================
+function gh_config() {
+return {
+token: localStorage.getItem('gh_token') || '',
+owner: localStorage.getItem('gh_owner') || '',
+repo:  localStorage.getItem('gh_repo')  || ''
+};
+}
+function gh_ready() {
+const c = gh_config();
+return !!(c.owner && c.repo && c.token);
+}
+// 通用请求：path 形如 'contents/entries/1.md'
+async function gh_api(path, opts = {}) {
+const { token, owner, repo } = gh_config();
+const url = `https://api.github.com/repos/${owner}/${repo}/${path}`;
+const headers = {
+'Authorization': `Bearer ${token}`,
+'Accept': 'application/vnd.github+json',
+'X-GitHub-Api-Version': '2022-11-28'
+};
+if (opts.body) headers['Content-Type'] = 'application/json';
+const res = await fetch(url, { ...opts, headers });
+if (!res.ok) {
+let msg = `GitHub API ${res.status}`;
+try { const j = await res.json(); if (j.message) msg += ': ' + j.message; } catch (_) {}
+throw new Error(msg);
+}
+return res.json();
+}
+// base64 编解码（处理 UTF-8 中文）
+function b64encode(str) { return btoa(unescape(encodeURIComponent(str))); }
+function b64decode(b64) { return decodeURIComponent(escape(atob(b64.replace(/\n/g, '')))); }
+// 列目录
+async function gh_listDir(path) { return gh_api(`contents/${path}`); }
+// 读 md 文件内容（返回 { sha, content }）
+async function gh_getContent(path) {
+const data = await gh_api(`contents/${path}`);
+return { sha: data.sha, content: b64decode(data.content) };
+}
+// PUT 写入文件（含可选 sha 用于更新已有文件）
+async function gh_putContent(path, contentB64, sha, msg) {
+const body = { message: msg, content: contentB64 };
+if (sha) body.sha = sha;
+return gh_api(`contents/${path}`, { method: 'PUT', body: JSON.stringify(body) });
+}
+// 上传图片到 images/ 目录，返回 download_url
+async function gh_uploadImage(name, b64) {
+const data = await gh_api(`contents/images/${name}`, {
+method: 'PUT',
+body: JSON.stringify({ message: `chore: upload image ${name}`, content: b64 })
+});
+return data.content && data.content.download_url;
+}
+// ============================================================
+// 【第二阶段新增模块 3】Markdown YAML frontmatter 解析 / 序列化
+// 约定：单条灵感 = 一个 md 文件，结构如下
+//   ---
+//   id: 1700000000000
+//   date: 2026-09-17
+//   time: 14:35
+//   updated_at: 2026-09-17T06:35:00.000Z
+//   tags: [回忆, 写作]
+//   images: ["https://.../1.jpg"]
+//   ---
+//
+//   ## [06-12 14:32]
+//   昨天中午坐在超市发呆……
+//
+//   ## [06-12 14:35]
+//   这个可以写成一篇散文……
+// ============================================================
+function md_parse(text) {
+const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+if (!m) {
+return { meta: {}, messages: [{ time: '', content: text.trim() }] };
+}
+const meta = {};
+m[1].split(/\r?\n/).forEach(line => {
+const i = line.indexOf(':');
+if (i === -1) return;
+const k = line.slice(0, i).trim();
+let v = line.slice(i + 1).trim();
+// 支持 tags: [回忆, 写作] / images: ["a", "b"] 数组语法
+const arr = v.match(/^\[(.*)\]$/);
+if (arr) {
+v = arr[1].split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+}
+meta[k] = v;
+});
+// 正文按 ## 段落切分
+const body = m[2].trim();
+const blocks = body.split(/\n\n+/).filter(Boolean);
+const messages = [];
+for (const blk of blocks) {
+const tm = blk.match(/^##\s*\[?([^\]\n]+?)\]?\r?\n([\s\S]*)$/);
+if (tm) {
+messages.push({ time: tm[1].trim(), content: tm[2].trim() });
+} else {
+messages.push({ time: '', content: blk.trim() });
+}
+}
+return { meta, messages };
+}
+function md_serialize(entry) {
+let fm = '---\n';
+fm += `id: ${entry.id}\n`;
+fm += `date: ${entry.date}\n`;
+fm += `time: ${entry.time}\n`;
+fm += `updated_at: ${new Date().toISOString()}\n`;   // 每次保存刷新 updated_at
+fm += `tags: [${(entry.tags || []).join(', ')}]\n`;
+if (entry.images && entry.images.length) {
+fm += `images: [${entry.images.map(s => `"${s}"`).join(', ')}]\n`;
+}
+fm += '---\n\n';
+fm += (entry.messages || []).map(m => `## [${m.time}]\n${m.content}`).join('\n\n');
+fm += '\n';
+return fm;
+}
+// ============================================================
+// 【第二阶段新增模块 4】数据层
+// - 拉取 entries/*.md → 替换全局 inspirations → 写 localStorage 缓存
+// - 新增/续写灵感 → PUT 写入 md 文件
+// ============================================================
+const LS_CACHE_KEY = 'inspirations_cache_v1';
+async function loadEntries() {
+// 未配置 GitHub：回落到 localStorage 缓存或 mock 数据
+if (!gh_ready()) {
+const cached = localStorage.getItem(LS_CACHE_KEY);
+if (cached) { try { inspirations = JSON.parse(cached); } catch (_) {} }
+renderTimeline();
+renderCalendar();
+return;
+}
+try {
+const list = await gh_listDir('entries');
+const mdFiles = Array.isArray(list) ? list.filter(f => f.name.endsWith('.md')) : [];
+const results = await Promise.all(mdFiles.map(async f => {
+const { content } = await gh_getContent(`entries/${f.name}`);
+const { meta, messages } = md_parse(content);
+return {
+id: parseInt(meta.id) || Date.now(),
+date: meta.date || f.name.replace(/\.md$/, ''),
+time: meta.time || '',
+updated_at: meta.updated_at || '',
+tags: Array.isArray(meta.tags) ? meta.tags : [],
+images: Array.isArray(meta.images) ? meta.images : [],
+messages: messages.length ? messages : [{ time: '', content: '' }]
+};
+}));
+// 按日期时间倒序
+inspirations = results.sort((a, b) =>
+(b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time)
+);
+localStorage.setItem(LS_CACHE_KEY, JSON.stringify(inspirations));
+renderTimeline();
+renderCalendar();
+} catch (e) {
+showToast('拉取灵感失败：' + e.message);
+const cached = localStorage.getItem(LS_CACHE_KEY);
+if (cached) {
+try { inspirations = JSON.parse(cached); renderTimeline(); renderCalendar(); } catch (_) {}
+}
+}
+}
+async function saveEntry(entry) {
+// 未配置 GitHub：仅写本地缓存
+if (!gh_ready()) {
+localStorage.setItem(LS_CACHE_KEY, JSON.stringify(inspirations));
+showToast('未配置 GitHub，仅本地缓存');
+return;
+}
+try {
+const content = md_serialize(entry);
+const b64 = b64encode(content);
+const path = `entries/${entry.id}.md`;
+// 先尝试读取旧 sha（已存在的文件）
+let sha;
+try { const info = await gh_getContent(path); sha = info.sha; } catch (_) {}
+await gh_putContent(path, b64, sha, `chore: ${sha ? 'update' : 'create'} entry ${entry.id}`);
+showToast('已同步到 GitHub');
+} catch (e) {
+showToast('保存失败：' + e.message);
+}
+}
+// ============================================================
+// 【第二阶段新增模块 5】图片上传（Canvas 压缩长边到 1600px）
+// ============================================================
+let imageQueue = []; // {dataUrl, name} 待保存时上传
+function compressImage(file) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = e => {
+const img = new Image();
+img.onload = () => {
+let { width, height } = img;
+const MAX = 1600;
+// 长边超过 1600 等比缩放
+if (width > MAX || height > MAX) {
+if (width >= height) {
+height = Math.round(height * MAX / width);
+width = MAX;
+} else {
+width = Math.round(width * MAX / height);
+height = MAX;
+}
+}
+const canvas = document.createElement('canvas');
+canvas.width = width;
+canvas.height = height;
+canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+// 输出 JPEG base64，0.85 压缩质量
+resolve(canvas.toDataURL('image/jpeg', 0.85));
+};
+img.onerror = reject;
+img.src = e.target.result;
+};
+reader.onerror = reject;
+reader.readAsDataURL(file);
+});
+}
+// 选中图片 → 压缩 → 加入待上传队列 → 刷新预览
+async function onImageSelected(e) {
+const file = e.target.files && e.target.files[0];
+if (!file) return;
+try {
+const dataUrl = await compressImage(file);
+imageQueue.push({ dataUrl, name: `img_${Date.now()}.jpg` });
+refreshImagePreview();
+} catch (err) {
+showToast('图片处理失败：' + err.message);
+}
+e.target.value = ''; // 允许重复选择同一文件
+}
+function refreshImagePreview() {
+const pv = document.getElementById('imagePreview');
+if (imageQueue.length === 0) {
+pv.classList.remove('show');
+pv.innerHTML = '';
+return;
+}
+pv.classList.add('show');
+pv.innerHTML = imageQueue.map((q, i) => `
+<div class="preview-item">
+<img src="${q.dataUrl}" alt="">
+<button class="preview-remove" data-i="${i}" title="移除">×</button>
+</div>
+`).join('');
+pv.querySelectorAll('.preview-remove').forEach(b => {
+b.addEventListener('click', () => {
+imageQueue.splice(parseInt(b.dataset.i), 1);
+refreshImagePreview();
+});
+});
+}
+// ============================================================
+// 【第二阶段新增模块 6】toast 提示 / 设置弹窗
+// ============================================================
+let _toastTimer = null;
+function showToast(msg) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.classList.add('show');
+clearTimeout(_toastTimer);
+_toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+function openSettings() {
+// 回填已有配置
+document.getElementById('ownerInput').value = localStorage.getItem('gh_owner') || '';
+document.getElementById('repoInput').value  = localStorage.getItem('gh_repo')  || '';
+document.getElementById('tokenInput').value = localStorage.getItem('gh_token') || '';
+document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings() {
+document.getElementById('settingsModal').classList.remove('show');
+}
+function saveSettings() {
+localStorage.setItem('gh_owner', document.getElementById('ownerInput').value.trim());
+localStorage.setItem('gh_repo',  document.getElementById('repoInput').value.trim());
+localStorage.setItem('gh_token', document.getElementById('tokenInput').value.trim());
+closeSettings();
+showToast('配置已保存，正在拉取灵感…');
+loadEntries();
+}
+// ============================================================
+// Mock 数据（保留，作为未配置 GitHub / 首次访问的回退）
+// 每条灵感包含多个 message（对话式续写）
+// ============================================================
+let inspirations = [
+{
+id: 1,
+date: fmtDate(dayOffset(1)),
+time: '14:35',
+tags: ['回忆'],
+images: [],
+messages: [
+{ time: fmtShort(dayOffset(1)) + ' 14:32', content: '昨天中午坐在超市发呆，想到很久以前我家也有大超市，从前的回忆涌来。' },
+{ time: fmtShort(dayOffset(1)) + ' 14:35', content: '这个可以写成一篇散文，开头就从超市的日光灯和手推车声音写起。' }
+]
+},
+{
+id: 2,
+date: fmtDate(dayOffset(2)),
+time: '22:10',
+tags: ['写作', '片段'],
+images: [],
+messages: [
+{ time: fmtShort(dayOffset(2)) + ' 22:10', content: '深夜写了一段关于雨声的片段，总觉得还差一点什么，像少了一个回声。' }
+]
+},
+{
+id: 3,
+date: fmtDate(dayOffset(3)),
+time: '08:15',
+tags: ['梦', '片段'],
+images: [],
+messages: [
+{ time: fmtShort(dayOffset(3)) + ' 08:15', content: '梦见一条没有尽头的走廊，墙上挂着会动的画，每一幅都在低声说话。' }
+]
+},
+{
+id: 4,
+date: fmtDate(dayOffset(4)),
+time: '19:40',
+tags: ['灵感', '日常'],
+images: [],
+messages: [
+{ time: fmtShort(dayOffset(4)) + ' 19:40', content: '傍晚散步时突然想到一个故事开头："那年夏天，蝉鸣把所有秘密都吃掉了。"' }
+]
+},
+{
+id: 5,
+date: fmtDate(dayOffset(5)),
+time: '11:20',
+tags: ['梦'],
+images: [],
+messages: [
+{ time: fmtShort(dayOffset(5)) + ' 11:20', content: '梦里在下雪，但雪花是暖色的，落在手心里像棉花糖。' }
+]
+}
+];
+// ---------- 视图状态 ----------
+// mode: 'calendar'（日历） | 'inspiration'（单条灵感对话） | 'day'（某天全部灵感）
+let viewState = { mode: 'calendar', data: null };
+let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);   // 日历当前月份
+let activeTags = [];   // 标签筛选集合
+// ============================================================
+// 渲染左侧时间线（保留）
+// ============================================================
+function renderTimeline() {
+const timeline = document.getElementById('timeline');
+let list = [...inspirations];
+// 标签筛选
+if (activeTags.length > 0) {
+list = list.filter(ins => ins.tags.some(t => activeTags.includes(t)));
+}
+// 按更新时间倒序
+list.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+if (list.length === 0) {
+timeline.innerHTML = '<div class="empty-state" style="padding:24px 8px">暂无灵感</div>';
+return;
+}
+timeline.innerHTML = list.map((ins, idx) => `
+<div class="timeline-item ${viewState.mode === 'inspiration' && viewState.data === ins.id ? 'active' : ''}" data-id="${ins.id}">
+<div class="timeline-time">${fmtShort(new Date(ins.date))} ${ins.time}</div>
+<div class="timeline-tags">
+${ins.tags.map(t => `<span class="tag ${tagClass(t)}">#${t}</span>`).join('')}
+</div>
+</div>
+${idx < list.length - 1 ? '<div class="timeline-divider"></div>' : ''}
+`).join('');
+// 绑定点击 → 展示该灵感对话
+timeline.querySelectorAll('.timeline-item').forEach(el => {
+el.addEventListener('click', () => showInspiration(parseInt(el.dataset.id)));
+});
+}
+// 标签 → 颜色类名映射（保留）
+function tagClass(tag) {
+const m = { '回忆': 'tag-pink', '灵感': 'tag-pink', '写作': 'tag-cyan', '梦': 'tag-lavender' };
+return m[tag] || 'tag-gray';
+}
+// ============================================================
+// 渲染右侧日历（保留）
+// ============================================================
+function renderCalendar() {
+const main = document.getElementById('mainContent');
+const year = currentMonth.getFullYear();
+const month = currentMonth.getMonth();
+const firstWeekday = new Date(year, month, 1).getDay();   // 当月1号是星期几
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+// 有灵感记录的日期集合
+const dateSet = new Set(inspirations.map(i => i.date));
+const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+let html = '<div class="calendar">';
+html += '<div class="calendar-header">';
+html +=   '<button class="calendar-nav" id="prevMonth">‹</button>';
+html +=   `<div class="calendar-title">${year} 年 ${month + 1} 月</div>`;
+html +=   '<button class="calendar-nav" id="nextMonth">›</button>';
+html += '</div>';
+html += '<div class="calendar-grid">';
+weekdays.forEach(w => html += `<div class="calendar-weekday">${w}</div>`);
+// 前置空白格
+for (let i = 0; i < firstWeekday; i++) html += '<div class="calendar-day empty"></div>';
+// 日期格
+for (let d = 1; d <= daysInMonth; d++) {
+const dateStr = fmtDate(new Date(year, month, d));
+const hasDot = dateSet.has(dateStr);
+const isToday = dateStr === fmtDate(today);
+html += `<div class="calendar-day ${hasDot ? 'has-dot' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">${d}</div>`;
+}
+html += '</div>';
+html += '<div class="calendar-legend"><span class="dot"></span>这天有新灵感或续写 · 点某一天查看当天灵感</div>';
+html += '</div>';
+main.innerHTML = html;
+// 月份切换
+document.getElementById('prevMonth').addEventListener('click', () => {
+currentMonth = new Date(year, month - 1, 1);
+renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+currentMonth = new Date(year, month + 1, 1);
+renderCalendar();
+});
+// 日期点击 → 展示当天所有灵感
+main.querySelectorAll('.calendar-day:not(.empty)').forEach(el => {
+el.addEventListener('click', () => showDayInspirations(el.dataset.date));
+});
+}
+// ============================================================
+// 展示某天的全部灵感卡片（保留）
+// ============================================================
+function showDayInspirations(dateStr) {
+const list = inspirations.filter(i => i.date === dateStr);
+viewState = { mode: 'day', data: dateStr };
+if (list.length === 0) {
+document.getElementById('mainContent').innerHTML = `
+<div class="empty-state">
+<p>${fmtShort(new Date(dateStr))} 这一天没有灵感记录</p>
+<p style="margin-top:8px;font-size:12px">在下方写下此刻的想法吧 ✦</p>
+</div>`;
+return;
+}
+renderInspirationCards(list);
+}
+// ============================================================
+// 展示单条灵感的对话卡片（保留）
+// ============================================================
+function showInspiration(id) {
+const ins = inspirations.find(i => i.id === id);
+if (!ins) return;
+viewState = { mode: 'inspiration', data: id };
+renderInspirationCards([ins]);
+renderTimeline();   // 同步高亮左侧选中项
+}
+// ============================================================
+// 渲染灵感卡片列表（对话式消息 + 续写按钮）
+// 增强：消息正文支持内嵌图片（markdown ![](url) → <img>）
+// ============================================================
+function renderInspirationCards(list) {
+const main = document.getElementById('mainContent');
+main.innerHTML = list.map(ins => `
+<div class="inspiration-card">
+<div class="card-header">
+<div class="card-tags">
+${ins.tags.map(t => `<span class="tag ${tagClass(t)}">#${t}</span>`).join('')}
+</div>
+<div class="card-meta">最后更新 ${fmtShort(new Date(ins.date))} ${ins.time}</div>
+</div>
+<div class="card-messages">
+${ins.messages.map(m => `
+<div class="message">
+<div class="message-time">${m.time}</div>
+<div class="message-content">${renderInlineContent(m.content)}</div>
+</div>
+`).join('')}
+</div>
+<div class="card-footer">
+<button class="continue-btn" data-id="${ins.id}">续写</button>
+</div>
+</div>
+`).join('');
+// 续写按钮 → 聚焦输入框并标记续写目标
+main.querySelectorAll('.continue-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+const id = parseInt(btn.dataset.id);
+const ins = inspirations.find(i => i.id === id);
+const input = document.getElementById('inputText');
+input.dataset.continueId = id;
+input.placeholder = `续写「#${ins.tags.join(' #')}」…`;
+input.focus();
+});
+});
+}
+// 【第二阶段新增】把消息正文里的 markdown 图片语法转换为 <img>
+// 文本内其余 HTML 字符做转义，避免 XSS
+function renderInlineContent(text) {
+if (!text) return '';
+// 先转义 HTML 危险字符
+const safe = text
+.replace(/&/g, '&amp;')
+.replace(/</g, '&lt;')
+.replace(/>/g, '&gt;');
+// 还原 markdown 图片 ![alt](url)
+return safe.replace(/!\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g,
+(_, alt, url) => `<img src="${url}" alt="${alt}">`)
+// 保留换行
+.replace(/\n/g, '<br>');
+}
+// ============================================================
+// 标签云弹窗（保留）
+// ============================================================
+function renderTagCloud() {
+const cloud = document.getElementById('tagCloud');
+const allTags = [...new Set(inspirations.flatMap(i => i.tags))];
+cloud.innerHTML = allTags.map(t => `
+<span class="cloud-tag ${activeTags.includes(t) ? 'active' : ''}" data-tag="${t}">#${t}</span>
+`).join('');
+cloud.querySelectorAll('.cloud-tag').forEach(el => {
+el.addEventListener('click', () => {
+const tag = el.dataset.tag;
+activeTags = activeTags.includes(tag)
+? activeTags.filter(t => t !== tag)
+: [...activeTags, tag];
+renderTagCloud();
+renderTimeline();
+});
+});
+}
+// ============================================================
+// 保存新灵感 / 续写（增强：async、上传图片、写 GitHub）
+// ============================================================
+async function saveInspiration() {
+const input = document.getElementById('inputText');
+const raw = input.value.trim();
+if (!raw && imageQueue.length === 0) return;
+// 从文本中提取 #标签，并从正文中移除
+const tagMatches = raw.match(/#([^\s#]+)/g) || [];
+const tags = tagMatches.map(t => t.slice(1));
+let content = raw.replace(/#([^\s#]+)/g, '').replace(/\s+/g, ' ').trim();
+if (!content) content = raw;   // 若全是标签，保留原文
+const now = new Date();
+const dateStr = fmtDate(now);
+const shortDate = fmtShort(now);
+const timeStr = fmtTime(now);
+const continueId = input.dataset.continueId;
+// —— 处理待上传图片：上传 GitHub images/，URL 拼到正文 ——
+let imageUrls = [];
+if (imageQueue.length > 0) {
+if (gh_ready()) {
+for (const q of imageQueue) {
+try {
+const b64 = q.dataUrl.split(',')[1];
+const url = await gh_uploadImage(q.name, b64);
+if (url) imageUrls.push(url);
+} catch (e) {
+showToast('图片上传失败：' + e.message);
+}
+}
+} else {
+// 未配置 GitHub：base64 内嵌（仅本地可见）
+imageUrls = imageQueue.map(q => q.dataUrl);
+showToast('未配置 GitHub，图片仅本地预览');
+}
+imageQueue = [];
+refreshImagePreview();
+}
+// 图片以 markdown 形式拼到正文后
+if (imageUrls.length) {
+content += (content ? '\n' : '') + imageUrls.map(u => `![](${u})`).join('\n');
+}
+if (continueId) {
+// —— 续写模式：追加到已有灵感 ——
+const ins = inspirations.find(i => i.id === parseInt(continueId));
+if (ins) {
+ins.messages.push({ time: `${shortDate} ${timeStr}`, content });
+if (tags.length) ins.tags = [...new Set([...ins.tags, ...tags])];
+ins.date = dateStr;
+ins.time = timeStr;
+if (imageUrls.length) ins.images = [...(ins.images || []), ...imageUrls];
+await saveEntry(ins);
+showInspiration(ins.id);
+}
+delete input.dataset.continueId;
+input.placeholder = '写下此刻的灵感…';
+} else {
+// —— 新建灵感 ——
+const newIns = {
+id: Date.now(),
+date: dateStr,
+time: timeStr,
+tags,
+images: imageUrls,
+messages: [{ time: `${shortDate} ${timeStr}`, content }]
+};
+inspirations.unshift(newIns);
+await saveEntry(newIns);
+showInspiration(newIns.id);
+}
+input.value = '';
+renderTimeline();
+}
+// ============================================================
+// 初始化（增强：登录态检查 + GitHub 配置检查 + 拉取远程数据）
+// ============================================================
+async function init() {
+// 1. 登录态检查
+if (sessionStorage.getItem('pwd_ok') !== '1') {
+document.getElementById('loginOverlay').classList.add('show');
+return;
+}
+// 2. 登录后：先渲染 UI（用 mock / 缓存数据兜底）
+renderTimeline();
+renderCalendar();
+// 3. GitHub 配置缺失：自动打开设置弹窗
+if (!gh_ready()) {
+document.getElementById('settingsModal').classList.add('show');
+return;
+}
+// 4. 拉取远程数据（失败回落缓存）
+await loadEntries();
+}
+// ============================================================
+// 事件绑定（保留原有 + 第二阶段新增）
+// ============================================================
+function bindEvents() {
+// 保存按钮 + 回车保存
+document.getElementById('saveBtn').addEventListener('click', saveInspiration);
+document.getElementById('inputText').addEventListener('keydown', e => {
+if (e.key === 'Enter' && !e.shiftKey) {
+e.preventDefault();
+saveInspiration();
+}
+});
+// 标签云
+document.getElementById('tagBtn').addEventListener('click', () => {
+renderTagCloud();
+document.getElementById('tagModal').classList.add('show');
+});
+document.getElementById('modalClose').addEventListener('click', () => {
+document.getElementById('tagModal').classList.remove('show');
+});
+document.getElementById('tagModal').addEventListener('click', e => {
+if (e.target.id === 'tagModal') {
+document.getElementById('tagModal').classList.remove('show');
+}
+});
+// 建议标签点击 → 追加到输入框
+document.querySelectorAll('.tag-suggestions span').forEach(el => {
+el.addEventListener('click', () => {
+const input = document.getElementById('inputText');
+input.value += (input.value ? ' ' : '') + el.textContent;
+input.focus();
+});
+});
+// —— 第二阶段新增：登录 ——
+document.getElementById('pwdSubmit').addEventListener('click', onLoginSubmit);
+document.getElementById('pwdInput').addEventListener('keydown', e => {
+if (e.key === 'Enter') onLoginSubmit();
+});
+// —— 第二阶段新增：设置弹窗 ——
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsCancel').addEventListener('click', closeSettings);
+document.getElementById('settingsSave').addEventListener('click', saveSettings);
+document.getElementById('settingsModal').addEventListener('click', e => {
+if (e.target.id === 'settingsModal') closeSettings();
+});
+// —— 第二阶段新增：图片上传 ——
+document.getElementById('uploadBtn').addEventListener('click', () => {
+document.getElementById('imageFile').click();
+});
+document.getElementById('imageFile').addEventListener('change', onImageSelected);
+}
+// 启动：先绑定事件（含登录按钮），再执行 init
+bindEvents();
+init();
+</script>
+</body>
+</html>
